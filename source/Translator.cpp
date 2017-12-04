@@ -1,4 +1,8 @@
 #include "Translator.h"
+#include <algorithm>
+#include <cassert>
+#include <fstream>
+#include <iostream>
 #include <sstream>
 #include <vector>
 #include <functional>
@@ -24,67 +28,103 @@ bool begin_with(const string& s, const string& pattern)
 	return true;
 }
 
-string sixthTitle(const string&)
+string markup(const string& mark,const string& s)
 {
-
+	stringstream ss;
+	ss << "<" << mark << ">" << s << "</" << mark << ">";
+	return ss.str();
 }
 
-string fifthTitle(const string&)
+string sixthTitle(const string& s)
 {
-
+	return markup("h6", s.substr(7));
 }
 
-string fourthTitle(const string&)
+string fifthTitle(const string& s)
 {
+	return markup("h5", s.substr(6));
 }
 
-string thirdTitle(const string&)
+string fourthTitle(const string& s)
 {
+	return markup("h4", s.substr(5));
 }
 
-string secondTitle(const string&)
+string thirdTitle(const string& s)
 {
+	return markup("h3", s.substr(4));
 }
 
-string firstTitle(const string&)
+string secondTitle(const string& s)
 {
+	return markup("h2", s.substr(3));
+}
+
+string firstTitle(const string& s)
+{
+	return markup("h1", s.substr(2));
 }
 
 map<std::string, function<string(const string&)>> marks()
 {
-	map<string, function<string(const string&)>> m;
+	map<string, function<string(const string&)>> m =
 	{
-		{"######", sixthTitle;}
-		{"#####",  fifthTitle;}
-		{"####",   fourthTitle;}
-		{"###",    thirdTitle;}
-		{"##",     secondTitle;}
-		{"#",	   firstTitle;}
-	}
+		{"###### ", sixthTitle},
+		{"##### ",  fifthTitle},
+		{"#### ",   fourthTitle},
+		{"### ",    thirdTitle} ,
+		{"## ",     secondTitle},
+		{"# ",	   firstTitle}
+	};
 	return m;
 }
 
+string analyzeLine(const string& line)
+{
+	auto m = marks();
+	string s;
+	for_each(m.begin(), m.end(), [&s, &line](auto p)
+			{
+				if (begin_with(line, p.first))
+				{
+					s = p.second(line);
+					return;
+				}
+			});
+	return s;
+}
 
 
 string analyzeMakrdown(const string& markdown)
 {
-	auto mark = marks();
 	stringstream ss(markdown);
 	string line;
+	string result;
 	while(getline(ss, line))
 	{
-		for(auto i = mark.begin(); i != mark.end(); ++i)
-		{
-			if (begin_with(line, i->first))
-				return i->second(line);
-		}
+		result += analyzeLine(line);
 	}
-	return string();
+	return result;
 }
 
-string translate(const string& markdown)
+string readFile(const string& fileName)
 {
-	string html = "<html>" "<title></title>";
-	html + analyzeMakrdown(markdown);	
-	html +=	"</html>";
+	ifstream file;
+	file.open(fileName, ios_base::in);
+	file.seekg(0, ios::end);
+	size_t size = file.tellg();
+	assert(size > 0);
+	file.seekg(0, ios::beg);
+	vector<char> buffer(size);
+	file.read(&buffer[0], size);
+	return &buffer[0];
+}
+
+string Translator::translate(const string& fileName)
+{
+	string content = readFile(fileName);
+	string html = "<html>" "<title></title><body>";
+	html += analyzeMakrdown(content);	
+	html +=	"</body></html>";
+	return html;
 }
