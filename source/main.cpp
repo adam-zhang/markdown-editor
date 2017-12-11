@@ -1,6 +1,6 @@
 #include <iostream>
 #include "CommandLine.h"
-#include "Translator.h"
+//#include "Translator.h"
 
 int main(int argc, char** argv)
 {
@@ -10,8 +10,8 @@ int main(int argc, char** argv)
 		std::cout << ret << std::endl;
 		return ret;
 	}
-	Translator translator;
-	std::cout << translator.translate(argv[1]) << std::endl;
+	//Translator translator;
+	//std::cout << translator.translate(argv[1]) << std::endl;
 	return 0;
 
 }
